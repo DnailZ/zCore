@@ -1,3 +1,11 @@
+//! Kernel HAL Unix User Space Implementation [DnailZ]
+//! 
+//! * Thread is implemented by rust `async-std`
+//! * Address Space is implemented by Unix user space.
+//!     * The virtual address space of the user program uses the address between 0 and PMEM_BASE.
+//!     * The physical address space of the kernel uses the address space higher than PMEM_BASE.
+//! 
+
 #![feature(asm, global_asm)]
 #![feature(linkage)]
 #![deny(warnings)]
@@ -322,6 +330,8 @@ lazy_static! {
 }
 
 /// Put a char by serial interrupt handler.
+/// 
+/// Implemented by `VecDeque`, uses STDIN_CALLBACK to revoke the process.
 fn serial_put(x: u8) {
     STDIN.lock().unwrap().push_back(x);
     for callback in STDIN_CALLBACK.lock().unwrap().drain(..) {
@@ -345,12 +355,16 @@ pub fn serial_read(buf: &mut [u8]) -> usize {
 }
 
 /// Output a char to console.
+/// 
+/// simply print it :)
 #[export_name = "hal_serial_write"]
 pub fn serial_write(s: &str) {
     eprint!("{}", s);
 }
 
 /// Get current time.
+/// 
+/// implemented by `SystemTime::now()`.
 #[export_name = "hal_timer_now"]
 pub fn timer_now() -> Duration {
     SystemTime::now()
@@ -361,6 +375,8 @@ pub fn timer_now() -> Duration {
 /// Set a new timer.
 ///
 /// After `deadline`, the `callback` will be called.
+/// 
+/// 
 #[export_name = "hal_timer_set"]
 pub fn timer_set(deadline: Duration, callback: Box<dyn FnOnce(Duration) + Send + Sync>) {
     std::thread::spawn(move || {
