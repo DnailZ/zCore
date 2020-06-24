@@ -1,4 +1,5 @@
-#!
+#!/usr/bin/env ruby
+# please install ruby and run "gem install pastel ruby_make_script" first
 
 require "ruby_make_script"
 
